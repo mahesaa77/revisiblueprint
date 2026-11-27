@@ -1,0 +1,29 @@
+# Menjalankan API + Web. PostgreSQL/Redis/RabbitMQ/MinIO belum disertakan karena
+# penyimpanan masih in-memory (lihat PLAN.md Fase 1 lanjutan).
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:3001
+      WEB_BASE_URL: http://localhost:3001
+      PPN_PERSEN: 0
+    ports: ['3000:3000']
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/v1/health']
+      interval: 10s
+      retries: 5
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3000/api/v1
+    environment:
+      API_INTERNAL_URL: http://api:3000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: ['3001:3001']
